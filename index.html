@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Personel Yönetim Sistemi</title>
+<title>DijiAKSU Personel Sistemi</title>
+<meta name="description" content="Dijital Personel Yönetim Sistemi - PIN ile giriş/çıkış, puantaj, izin yönetimi">
+<meta name="theme-color" content="#3b82f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DijiAKSU">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <!-- Firebase -->
@@ -323,6 +331,7 @@ select.inp{appearance:none;cursor:pointer;}
     </div>
   </div>
   <button class="admin-btn" onclick="goAdmin()">⚙️ Yönetici</button>
+<button class="admin-btn" id="installBtn" onclick="installApp()" style="display:none;bottom:60px;background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.4);color:var(--accent)">📲 Uygulamayı Yükle</button>
 </div>
 
 <!-- ADMIN LOGIN -->
@@ -1590,9 +1599,41 @@ function itGonder(){
   document.getElementById('it3').style.display='block';
 }
 
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(result=>{
+      if(result.outcome==='accepted'){
+        document.getElementById('installBtn').style.display='none';
+        toast('✅ Uygulama yüklendi!');
+      }
+      deferredPrompt=null;
+    });
+  }
+}
+
 // ============ INIT ============
 window.addEventListener('online',()=>updateFbStatus(true));
 window.addEventListener('offline',()=>updateFbStatus(false));
+
+// PWA Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(reg=>console.log('SW registered'))
+      .catch(err=>console.log('SW error:', err));
+  });
+}
+
+// PWA Install Prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  // Yükle butonu göster
+  const installBtn = document.getElementById('installBtn');
+  if(installBtn) installBtn.style.display='flex';
+});
 updateSels();renderDash();renderLastEntries();
 document.getElementById('navCnt').textContent=S.personel.length;
 document.getElementById('mobileNav').style.display='none';
