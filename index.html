@@ -772,6 +772,7 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function parseLD(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
 function WS(){return S.settings.wsStart||'08:00';}
+function WE(){return S.settings.wsEnd||'17:00';}
 function updateFbStatus(ok){const el=document.getElementById('fbStatus');const txt=document.getElementById('fbTxt');if(!el)return;el.className='fb-status '+(ok?'ok':'warn');txt.textContent=ok?'☁️ Bulut aktif':'⚠️ Çevrimdışı';}
 
 // ============ CLOCK ============
