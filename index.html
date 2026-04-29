@@ -505,31 +505,11 @@ select.inp{appearance:none;cursor:pointer;}
             <button class="btn btn-primary" onclick="changePw()">Güncelle</button>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title">⏰ Vardiya Saatleri</div></div>
-            <div style="margin-bottom:12px">
-              <select class="inp" id="vardiyaMod" onchange="toggleVardiya()" style="margin-bottom:10px">
-                <option value="tek">Tek Vardiya</option>
-                <option value="cok">Çok Vardiya (Otomatik)</option>
-              </select>
-            </div>
-            <div id="v1wrap">
-              <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px;">1. Vardiya</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-                <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="wsStart" value="08:00"></div>
-                <div class="field"><label>Bitiş</label><input type="time" class="inp" id="wsEnd" value="16:00"></div>
-              </div>
-            </div>
-            <div id="v2wrap" style="display:none">
-              <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:6px;">2. Vardiya</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-                <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="ws2Start" value="16:00"></div>
-                <div class="field"><label>Bitiş</label><input type="time" class="inp" id="ws2End" value="00:00"></div>
-              </div>
-              <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px;">3. Vardiya</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-                <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="ws3Start" value="00:00"></div>
-                <div class="field"><label>Bitiş</label><input type="time" class="inp" id="ws3End" value="08:00"></div>
-              </div>
+            <div class="card-header"><div class="card-title">⏰ Mesai Saatleri</div></div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Sadece referans için. Puantajda giriş/çıkış saati ve toplam süre gösterilir.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+              <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="wsStart" value="08:00"></div>
+              <div class="field"><label>Bitiş</label><input type="time" class="inp" id="wsEnd" value="17:00"></div>
             </div>
             <button class="btn btn-primary" onclick="saveSettings()">Kaydet</button>
           </div>
@@ -786,24 +766,7 @@ function parseLD(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,
 function WS(){return S.settings.wsStart||'08:00';}
 function WE(){return S.settings.wsEnd||'17:00';}
 
-function toggleVardiya(){
-  const mod=document.getElementById('vardiyaMod')?.value||'tek';
-  const v2=document.getElementById('v2wrap');
-  if(v2) v2.style.display=mod==='cok'?'block':'none';
-}
 
-function getVardiya(girisStr){
-  // Giriş saatine göre otomatik vardiya belirle
-  if(!girisStr || S.settings.vardiyaMod!=='cok') return {start:WS(), end:WE(), no:1};
-  const [h] = girisStr.split(':').map(Number);
-  const v1s = parseInt((S.settings.wsStart||'08:00').split(':')[0]);
-  const v2s = parseInt((S.settings.ws2Start||'16:00').split(':')[0]);
-  const v3s = parseInt((S.settings.ws3Start||'00:00').split(':')[0]);
-  // Hangi vardiyaya yakın?
-  if(h>=v1s && h<v2s) return {start:S.settings.wsStart||'08:00', end:S.settings.wsEnd||'16:00', no:1};
-  if(h>=v2s) return {start:S.settings.ws2Start||'16:00', end:S.settings.ws2End||'00:00', no:2};
-  return {start:S.settings.ws3Start||'00:00', end:S.settings.ws3End||'08:00', no:3};
-}
 function WE(){return S.settings.wsEnd||'17:00';}
 
 function toggleVardiya(){
@@ -1365,9 +1328,9 @@ function renderPuantaj(){
   let html=`<table style="min-width:max-content;width:100%;border-collapse:collapse"><thead><tr>
     <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);min-width:150px;position:sticky;left:0;background:var(--surface);z-index:2">PERSONEL</th>
     ${dh.map(d=>{const iw=[0,6].includes(new Date(y,m,d).getDay());return `<th style="padding:4px 2px;font-size:10px;color:${iw?'#334155':'var(--muted)'};font-weight:700;min-width:22px;text-align:center">${d}</th>`;}).join('')}
-    <th style="padding:8px;font-size:10px;color:var(--muted);font-weight:700;min-width:44px;text-align:center">GÜN</th>
-    <th style="padding:8px;font-size:10px;color:var(--muted);font-weight:700;min-width:44px;text-align:center">SAAT</th>
-    <th style="padding:8px;font-size:10px;color:var(--muted);font-weight:700;min-width:44px;text-align:center">MEZSAİ</th>
+    <th style="padding:8px;font-size:10px;color:var(--muted);font-weight:700;min-width:55px;text-align:center">GİRİŞ</th>
+    <th style="padding:8px;font-size:10px;color:var(--muted);font-weight:700;min-width:55px;text-align:center">ÇIKIŞ</th>
+    <th style="padding:8px;font-size:10px;color:var(--muted);font-weight:700;min-width:55px;text-align:center">TOPLAM</th>
   </tr></thead><tbody>`;
   const sums=[];
   S.personel.forEach((p,pi)=>{
@@ -1593,14 +1556,13 @@ function exportDetayRapor(){
       if(rec?.izin){durum='Izin';giris='Izinli';cikis='Izinli';}
       else if(rec?.in){
         giris=rec.in;
-        const vardiya=getVardiya(rec.in);
-        const late=rec.in>vardiya.start;
+        const late=false; // vardiya sistemi kaldırıldı
         if(rec.out){
           cikis=rec.out;
           const h=calcH(rec.in,rec.out);
           const hh=Math.floor(h),mm2=Math.round((h-hh)*60);
           sure=`${hh}s ${mm2}dk`;
-          const early=rec.out<vardiya.end && vardiya.end!=='00:00';
+          const early=false;
           durum=late?'Gec Giris':early?'Erken Cikis':'Normal';
         } else if(ds===TODAY){
           cikis='Devam ediyor';
