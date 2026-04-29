@@ -505,9 +505,32 @@ select.inp{appearance:none;cursor:pointer;}
             <button class="btn btn-primary" onclick="changePw()">Güncelle</button>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title">⏰ Mesai Saatleri</div></div>
-            <div class="field" style="margin-bottom:10px"><label>Başlangıç</label><input type="time" class="inp" id="wsStart" value="08:00"></div>
-            <div class="field" style="margin-bottom:14px"><label>Bitiş</label><input type="time" class="inp" id="wsEnd" value="17:00"></div>
+            <div class="card-header"><div class="card-title">⏰ Vardiya Saatleri</div></div>
+            <div style="margin-bottom:12px">
+              <select class="inp" id="vardiyaMod" onchange="toggleVardiya()" style="margin-bottom:10px">
+                <option value="tek">Tek Vardiya</option>
+                <option value="cok">Çok Vardiya (Otomatik)</option>
+              </select>
+            </div>
+            <div id="v1wrap">
+              <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px;">1. Vardiya</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="wsStart" value="08:00"></div>
+                <div class="field"><label>Bitiş</label><input type="time" class="inp" id="wsEnd" value="16:00"></div>
+              </div>
+            </div>
+            <div id="v2wrap" style="display:none">
+              <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:6px;">2. Vardiya</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="ws2Start" value="16:00"></div>
+                <div class="field"><label>Bitiş</label><input type="time" class="inp" id="ws2End" value="00:00"></div>
+              </div>
+              <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px;">3. Vardiya</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div class="field"><label>Başlangıç</label><input type="time" class="inp" id="ws3Start" value="00:00"></div>
+                <div class="field"><label>Bitiş</label><input type="time" class="inp" id="ws3End" value="08:00"></div>
+              </div>
+            </div>
             <button class="btn btn-primary" onclick="saveSettings()">Kaydet</button>
           </div>
         </div>
@@ -762,6 +785,32 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 function parseLD(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
 function WS(){return S.settings.wsStart||'08:00';}
 function WE(){return S.settings.wsEnd||'17:00';}
+
+function toggleVardiya(){
+  const mod=document.getElementById('vardiyaMod')?.value||'tek';
+  const v2=document.getElementById('v2wrap');
+  if(v2) v2.style.display=mod==='cok'?'block':'none';
+}
+
+function getVardiya(girisStr){
+  // Giriş saatine göre otomatik vardiya belirle
+  if(!girisStr || S.settings.vardiyaMod!=='cok') return {start:WS(), end:WE(), no:1};
+  const [h] = girisStr.split(':').map(Number);
+  const v1s = parseInt((S.settings.wsStart||'08:00').split(':')[0]);
+  const v2s = parseInt((S.settings.ws2Start||'16:00').split(':')[0]);
+  const v3s = parseInt((S.settings.ws3Start||'00:00').split(':')[0]);
+  // Hangi vardiyaya yakın?
+  if(h>=v1s && h<v2s) return {start:S.settings.wsStart||'08:00', end:S.settings.wsEnd||'16:00', no:1};
+  if(h>=v2s) return {start:S.settings.ws2Start||'16:00', end:S.settings.ws2End||'00:00', no:2};
+  return {start:S.settings.ws3Start||'00:00', end:S.settings.ws3End||'08:00', no:3};
+}
+function WE(){return S.settings.wsEnd||'17:00';}
+
+function toggleVardiya(){
+  const mod=document.getElementById('vardiyaMod')?.value||'tek';
+  const v2=document.getElementById('v2wrap');
+  if(v2) v2.style.display=mod==='cok'?'block':'none';
+}
 function updateFbStatus(ok){const el=document.getElementById('fbStatus');const txt=document.getElementById('fbTxt');if(!el)return;el.className='fb-status '+(ok?'ok':'warn');txt.textContent=ok?'☁️ Bulut aktif':'⚠️ Çevrimdışı';}
 
 // ============ CLOCK ============
@@ -833,7 +882,20 @@ function showAPage(id,el){
   if(id==='izinler'){updateIzinSels();renderBekleyenTalepler();renderIzinSummary();renderIzinListesi();}
   if(id==='ayarlar'){
     document.getElementById('wsStart').value=S.settings.wsStart||'08:00';
-    document.getElementById('wsEnd').value=S.settings.wsEnd||'17:00';
+    document.getElementById('wsEnd').value=S.settings.wsEnd||'16:00';
+    if(document.getElementById('ws2Start'))document.getElementById('ws2Start').value=S.settings.ws2Start||'16:00';
+    if(document.getElementById('ws2End'))document.getElementById('ws2End').value=S.settings.ws2End||'00:00';
+    if(document.getElementById('ws3Start'))document.getElementById('ws3Start').value=S.settings.ws3Start||'00:00';
+    if(document.getElementById('ws3End'))document.getElementById('ws3End').value=S.settings.ws3End||'08:00';
+    if(document.getElementById('vardiyaMod')){
+      document.getElementById('vardiyaMod').value=S.settings.vardiyaMod||'tek';
+      toggleVardiya();
+    }
+    if(document.getElementById('ws2Start'))document.getElementById('ws2Start').value=S.settings.ws2Start||'16:00';
+    if(document.getElementById('ws2End'))document.getElementById('ws2End').value=S.settings.ws2End||'00:00';
+    if(document.getElementById('ws3Start'))document.getElementById('ws3Start').value=S.settings.ws3Start||'00:00';
+    if(document.getElementById('ws3End'))document.getElementById('ws3End').value=S.settings.ws3End||'08:00';
+    if(document.getElementById('vardiyaMod'))document.getElementById('vardiyaMod').value=S.settings.vardiyaMod||'tek';
     document.getElementById('konumMesafe').value=S.settings.konumMesafe||100;
     if(S.settings.konum&&S.settings.konum.lat){
       document.getElementById('konumGoster').textContent=S.settings.konum.lat.toFixed(6)+', '+S.settings.konum.lng.toFixed(6);
@@ -1531,13 +1593,14 @@ function exportDetayRapor(){
       if(rec?.izin){durum='Izin';giris='Izinli';cikis='Izinli';}
       else if(rec?.in){
         giris=rec.in;
-        const late=rec.in>WS();
+        const vardiya=getVardiya(rec.in);
+        const late=rec.in>vardiya.start;
         if(rec.out){
           cikis=rec.out;
           const h=calcH(rec.in,rec.out);
           const hh=Math.floor(h),mm2=Math.round((h-hh)*60);
           sure=`${hh}s ${mm2}dk`;
-          const early=rec.out<WE();
+          const early=rec.out<vardiya.end && vardiya.end!=='00:00';
           durum=late?'Gec Giris':early?'Erken Cikis':'Normal';
         } else if(ds===TODAY){
           cikis='Devam ediyor';
