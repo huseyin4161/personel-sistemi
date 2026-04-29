@@ -1324,26 +1324,30 @@ function renderDetayRapor(){
     const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const iw = [0,6].includes(new Date(y,m,d).getDay());
     if(iw) continue;
-    if(ds > TODAY) continue; // gelecek günleri gösterme
+    const todayDate = TODAY || todayStr();
+    if(ds > todayDate) continue; // gelecek günleri gösterme
     
     if(pid){
       const p = S.personel.find(x=>x.id===pid);
       if(!p) continue;
       const rec = (S.records[ds]||{})[p.id];
-      rows.push({ds, d, p, rec});
+      rows.push({ds, d, p, rec: rec||null});
     } else {
       S.personel.forEach(p=>{
         const rec = (S.records[ds]||{})[p.id];
-        rows.push({ds, d, p, rec});
+        rows.push({ds, d, p, rec: rec||null});
       });
     }
   }
 
   // En yeni önce
   rows.reverse();
+  
+  // Sadece geçmiş günleri göster - max 30 kayıt
+  rows = rows.slice(0, 60);
 
-  if(!rows.length){
-    wrap.innerHTML='<div class="es"><div class="es-i">📋</div><div class="es-t">Bu ay için personel ya da kayıt yok</div></div>';
+  if(!rows.length || !S.personel.length){
+    wrap.innerHTML='<div class="es"><div class="es-i">📋</div><div class="es-t">Gösterilecek kayıt yok</div></div>';
     return;
   }
 
@@ -1381,7 +1385,8 @@ function renderDetayRapor(){
       calismaHtml = '<span style="color:var(--muted)">—</span>';
     } else if(rec?.in){
       const late = rec.in > WS();
-      const early = rec.out && rec.out < WE();
+      const weTime = S.settings?.wsEnd||'17:00';
+        const early = rec.out && rec.out < weTime;
       
       // Giriş saati
       const girisColor = late ? 'var(--orange)' : 'var(--green)';
@@ -1398,8 +1403,8 @@ function renderDetayRapor(){
         const h = calcH(rec.in, rec.out);
         const hh = Math.floor(h);
         const mm2 = Math.round((h-hh)*60);
-        const ws = parseFloat(S.settings?.wsStart?.replace(':','.') || 8);
-        const we = parseFloat(S.settings?.wsEnd?.replace(':','.') || 17);
+        const ws = parseFloat((S.settings?.wsStart||'08:00').replace(':','.'));
+        const we = parseFloat((S.settings?.wsEnd||'17:00').replace(':','.'));
         const normal = we - ws;
         const mesai = h > normal ? h - normal : 0;
         const mesaiTxt = mesai > 0 ? `<span style="color:var(--accent);font-size:11px;margin-left:4px">(+${mesai.toFixed(1)}s mesai)</span>` : '';
@@ -1413,7 +1418,8 @@ function renderDetayRapor(){
         `<span style="background:rgba(245,158,11,.15);color:var(--orange);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ DİKKAT</span>` :
         `<span style="background:rgba(34,197,94,.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ NORMAL</span>`;
     } else {
-      durumHtml = ds <= TODAY ? 
+      const todayCheck = TODAY || todayStr();
+      durumHtml = ds <= todayCheck ? 
         `<span style="background:rgba(239,68,68,.15);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ DEVAMSIZ</span>` : '';
     }
 
