@@ -453,8 +453,6 @@ select.inp{appearance:none;cursor:pointer;}
           <div style="overflow-x:auto" id="pWrap"></div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="pCards"></div>
-
-
       </div>
 
       <!-- İZİNLER -->
@@ -747,7 +745,7 @@ window._applyFirebaseData=function(data){
     if(ap.id==='apage-personel')renderTbl();
     if(ap.id==='apage-devam')renderTodayRecs();
     if(ap.id==='apage-puantaj')renderPuantaj();
-    if(ap.id==='apage-izinler'){renderBekleyenTalepler();renderIzinSummary();renderIzinListesi();}
+    if(ap.id==='apage-izinler'){renderIzinSummary();renderIzinListesi();}
   }
 };
 
@@ -1293,143 +1291,6 @@ function renderTodayRecs(){
 }
 
 // ============ PUANTAJ ============
-function updateDetayPersonelSel(){
-  const sel = document.getElementById('detayPersonelSel');
-  if(!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Tüm Personel</option>' + 
-    S.personel.map(p => `<option value="${p.id}" ${p.id===cur?'selected':''}>${p.ad} ${p.soyad}</option>`).join('');
-}
-
-function renderDetayRapor(){
-  const wrap = document.getElementById('detayRaporWrap');
-  if(!wrap) return;
-  const pid = document.getElementById('detayPersonelSel')?.value || '';
-  const y = puantajM.getFullYear(), m = puantajM.getMonth();
-  const dim = new Date(y,m+1,0).getDate();
-  
-  // Tüm kayıtları topla - kayıt olmayan günleri de dahil et
-  let rows = [];
-  for(let d=1; d<=dim; d++){
-    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const iw = [0,6].includes(new Date(y,m,d).getDay());
-    if(iw) continue;
-    const todayDate = TODAY || todayStr();
-    if(ds > todayDate) continue; // gelecek günleri gösterme
-    
-    if(pid){
-      const p = S.personel.find(x=>x.id===pid);
-      if(!p) continue;
-      const rec = (S.records[ds]||{})[p.id];
-      rows.push({ds, d, p, rec: rec||null});
-    } else {
-      S.personel.forEach(p=>{
-        const rec = (S.records[ds]||{})[p.id];
-        rows.push({ds, d, p, rec: rec||null});
-      });
-    }
-  }
-
-  // En yeni önce
-  rows.reverse();
-  
-  // Sadece geçmiş günleri göster - max 30 kayıt
-  rows = rows.slice(0, 60);
-
-  if(!rows.length || !S.personel.length){
-    wrap.innerHTML='<div class="es"><div class="es-i">📋</div><div class="es-t">Gösterilecek kayıt yok</div></div>';
-    return;
-  }
-
-  const gunler = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
-  
-  let html = `<div style="overflow-x:auto">
-  <table style="width:100%;border-collapse:collapse;font-size:13px">
-  <thead>
-    <tr style="border-bottom:1px solid var(--border2)">
-      <th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--muted);font-weight:700;">TARİH</th>
-      ${!pid?'<th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--muted);font-weight:700;">PERSONEL</th>':''}
-      <th style="padding:10px 14px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;">GİRİŞ</th>
-      <th style="padding:10px 14px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;">ÇIKIŞ</th>
-      <th style="padding:10px 14px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;">ÇALIŞMA</th>
-      <th style="padding:10px 14px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;">DURUM</th>
-    </tr>
-  </thead>
-  <tbody>`;
-
-  rows.forEach(({ds, d, p, rec})=>{
-    const tarih = new Date(ds);
-    const gunAdi = gunler[tarih.getDay()];
-    const tarihStr = `${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}.${y}`;
-    const co = aC(S.personel.indexOf(p));
-
-    let girisHtml = '<span style="color:var(--muted)">—</span>';
-    let cikisHtml = '<span style="color:var(--muted)">—</span>';
-    let calismaHtml = '<span style="color:var(--muted)">—</span>';
-    let durumHtml = '';
-
-    if(rec?.izin){
-      durumHtml = `<span style="background:rgba(59,130,246,.15);color:var(--accent);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">İZİN</span>`;
-      girisHtml = '<span style="color:var(--muted)">İzinli</span>';
-      cikisHtml = '<span style="color:var(--muted)">İzinli</span>';
-      calismaHtml = '<span style="color:var(--muted)">—</span>';
-    } else if(rec?.in){
-      const late = rec.in > WS();
-      const weTime = S.settings?.wsEnd||'17:00';
-        const early = rec.out && rec.out < weTime;
-      
-      // Giriş saati
-      const girisColor = late ? 'var(--orange)' : 'var(--green)';
-      girisHtml = `<span style="color:${girisColor};font-weight:700;font-family:'DM Mono',monospace">${rec.in}</span>`;
-      if(late) girisHtml += `<span style="font-size:10px;color:var(--orange);margin-left:4px">⚠️ Geç</span>`;
-
-      // Çıkış saati
-      if(rec.out){
-        const cikisColor = early ? 'var(--orange)' : 'var(--muted2)';
-        cikisHtml = `<span style="color:${cikisColor};font-weight:700;font-family:'DM Mono',monospace">${rec.out}</span>`;
-        if(early) cikisHtml += `<span style="font-size:10px;color:var(--orange);margin-left:4px">⚠️ Erken</span>`;
-        
-        // Çalışma süresi
-        const h = calcH(rec.in, rec.out);
-        const hh = Math.floor(h);
-        const mm2 = Math.round((h-hh)*60);
-        const ws = parseFloat((S.settings?.wsStart||'08:00').replace(':','.'));
-        const we = parseFloat((S.settings?.wsEnd||'17:00').replace(':','.'));
-        const normal = we - ws;
-        const mesai = h > normal ? h - normal : 0;
-        const mesaiTxt = mesai > 0 ? `<span style="color:var(--accent);font-size:11px;margin-left:4px">(+${mesai.toFixed(1)}s mesai)</span>` : '';
-        calismaHtml = `<span style="font-weight:700;color:var(--muted2);font-family:'DM Mono',monospace">${hh}s ${mm2}dk</span>${mesaiTxt}`;
-      } else if(ds === TODAY){
-        cikisHtml = `<span style="color:var(--accent);font-size:11px">Devam ediyor...</span>`;
-        calismaHtml = `<span style="color:var(--muted)">—</span>`;
-      }
-
-      durumHtml = late || early ? 
-        `<span style="background:rgba(245,158,11,.15);color:var(--orange);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ DİKKAT</span>` :
-        `<span style="background:rgba(34,197,94,.15);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ NORMAL</span>`;
-    } else {
-      const todayCheck = TODAY || todayStr();
-      durumHtml = ds <= todayCheck ? 
-        `<span style="background:rgba(239,68,68,.15);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ DEVAMSIZ</span>` : '';
-    }
-
-    html += `<tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
-      <td style="padding:12px 14px">
-        <div style="font-weight:700;font-size:13px">${tarihStr}</div>
-        <div style="font-size:11px;color:var(--muted)">${gunAdi}</div>
-      </td>
-      ${!pid?`<td style="padding:12px 14px"><div style="display:flex;align-items:center;gap:8px">${avEl(p)}<span style="font-weight:600">${p.ad} ${p.soyad}</span></div></td>`:''}
-      <td style="padding:12px 14px;text-align:center">${girisHtml}</td>
-      <td style="padding:12px 14px;text-align:center">${cikisHtml}</td>
-      <td style="padding:12px 14px;text-align:center">${calismaHtml}</td>
-      <td style="padding:12px 14px;text-align:center">${durumHtml}</td>
-    </tr>`;
-  });
-
-  html += '</tbody></table></div>';
-  wrap.innerHTML = html;
-}
-
 function renderPuantaj(){
   const y=puantajM.getFullYear(),m=puantajM.getMonth();
   document.getElementById('pmLbl').textContent=fmtM(puantajM);
@@ -1755,14 +1616,11 @@ function installApp(){
 window.addEventListener('online',()=>updateFbStatus(true));
 window.addEventListener('offline',()=>updateFbStatus(false));
 
-// PWA Service Worker - cache temizle
+// PWA Service Worker
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(r=>r.unregister());
-  });
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js')
-      .then(reg=>{reg.update();console.log('SW registered');})
+      .then(reg=>console.log('SW registered'))
       .catch(err=>console.log('SW error:', err));
   });
 }
