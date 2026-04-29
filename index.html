@@ -378,7 +378,8 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="topbar-right">
         <div class="search-bar" id="srchWrap" style="display:none"><span>🔍</span><input type="text" id="srchInp" placeholder="Ara..." oninput="filterTbl()"></div>
         <button class="btn btn-primary" id="addBtn" style="display:none" onclick="openPModal()">+ Ekle</button>
-        <button class="btn btn-ghost" id="rprBtn" style="display:none" onclick="dlReport()">📥 Rapor</button>
+        <button class="btn btn-ghost" id="rprBtn" style="display:none" onclick="dlReport()">📥 Puantaj</button>
+      <button id="detayBtn" class="btn btn-ghost" style="display:none" onclick="exportDetayRapor()">🕐 Detay</button>
       </div>
     </div>
     <div class="content">
@@ -760,6 +761,7 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function parseLD(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
 function WS(){return S.settings.wsStart||'08:00';}
+function WE(){return S.settings.wsEnd||'17:00';}
 function updateFbStatus(ok){const el=document.getElementById('fbStatus');const txt=document.getElementById('fbTxt');if(!el)return;el.className='fb-status '+(ok?'ok':'warn');txt.textContent=ok?'☁️ Bulut aktif':'⚠️ Çevrimdışı';}
 
 // ============ CLOCK ============
@@ -823,6 +825,7 @@ function showAPage(id,el){
   document.getElementById('addBtn').style.display=id==='personel'?'flex':'none';
   document.getElementById('srchWrap').style.display=(id==='personel'&&window.innerWidth>768)?'flex':'none';
   document.getElementById('rprBtn').style.display=id==='puantaj'?'flex':'none';
+  if(document.getElementById('detayBtn'))document.getElementById('detayBtn').style.display=id==='puantaj'?'flex':'none';
   if(id==='dashboard')renderDash();
   if(id==='personel')renderTbl();
   if(id==='devam'){updateSels();renderCal();renderTodayRecs();}
@@ -1510,6 +1513,92 @@ function exportData(){const blob=new Blob([JSON.stringify(S,null,2)],{type:'appl
 function clearAll(){if(!confirm('TÜM verileri silmek istiyor musunuz? Bu işlem geri alınamaz!'))return;S.personel=[];S.records={};S.izinler=[];save();renderDash();renderTbl();updateSels();document.getElementById('navCnt').textContent=0;toast('🗑 Tüm veriler silindi');}
 
 // ============ RAPOR ============
+function exportDetayRapor(){
+  const y=puantajM.getFullYear(),m=puantajM.getMonth();
+  const dim=new Date(y,m+1,0).getDate();
+  const gunler=['Paz','Pzt','Sal','Car','Per','Cum','Cmt'];
+  const ay=fmtM(puantajM);
+  let rows=[];
+  S.personel.forEach(p=>{
+    for(let d=1;d<=dim;d++){
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const iw=[0,6].includes(new Date(y,m,d).getDay());
+      if(iw||ds>TODAY) continue;
+      const rec=(S.records[ds]||{})[p.id];
+      const gun=gunler[new Date(ds).getDay()];
+      const tarih=`${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}.${y}`;
+      let giris='—',cikis='—',sure='—',durum='Devamsiz';
+      if(rec?.izin){durum='Izin';giris='Izinli';cikis='Izinli';}
+      else if(rec?.in){
+        giris=rec.in;
+        const late=rec.in>WS();
+        if(rec.out){
+          cikis=rec.out;
+          const h=calcH(rec.in,rec.out);
+          const hh=Math.floor(h),mm2=Math.round((h-hh)*60);
+          sure=`${hh}s ${mm2}dk`;
+          const early=rec.out<WE();
+          durum=late?'Gec Giris':early?'Erken Cikis':'Normal';
+        } else if(ds===TODAY){
+          cikis='Devam ediyor';
+          durum=late?'Gec Giris':'Normal';
+        } else {
+          cikis='Cikis Yapilmamis';
+          durum='Eksik';
+        }
+      }
+      rows.push({ad:`${p.ad} ${p.soyad}`,tarih,gun,giris,cikis,sure,durum});
+    }
+  });
+
+  let html=`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+  <title>Giris/Cikis Raporu - ${ay}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#1e293b;}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid #1e3a8a;}
+    h2{color:#1e3a8a;font-size:16px;margin:0 0 4px 0;}
+    .sub{color:#64748b;font-size:11px;margin:2px 0;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:#1e3a8a;color:white;padding:8px 10px;text-align:left;font-size:11px;}
+    td{padding:7px 10px;border-bottom:1px solid #e2e8f0;font-size:11px;}
+    tr:nth-child(even){background:#f8fafc;}
+    .normal{color:#16a34a;font-weight:700;}
+    .gec{color:#d97706;font-weight:700;}
+    .erken{color:#ea580c;font-weight:700;}
+    .devamsiz{color:#dc2626;font-weight:700;}
+    .izin{color:#2563eb;font-weight:700;}
+    .eksik{color:#9333ea;font-weight:700;}
+    .saat{font-family:monospace;font-weight:700;}
+    .prnbtn{background:#1e3a8a;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;}
+    @media print{.prnbtn{display:none;}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      <h2>Giris/Cikis Detay Raporu - ${ay}</h2>
+      <p class="sub">DijiAKSU Personel Sistemi</p>
+      <p class="sub">Olusturulma: ${new Date().toLocaleString('tr-TR')}</p>
+      <p class="sub">Normal calisma: ${WS()} - ${WE()}</p>
+    </div>
+    <button class="prnbtn" onclick="window.print()">Yazdir</button>
+  </div>
+  <table>
+  <thead><tr>
+    <th>Personel</th><th>Tarih</th><th>Gun</th>
+    <th>Giris</th><th>Cikis</th><th>Sure</th><th>Durum</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const cls=r.durum==='Normal'?'normal':r.durum==='Gec Giris'?'gec':r.durum==='Erken Cikis'?'erken':r.durum==='Izin'?'izin':r.durum==='Eksik'?'eksik':'devamsiz';
+    html+=`<tr><td style="font-weight:600">${r.ad}</td><td>${r.tarih}</td><td>${r.gun}</td><td class="saat">${r.giris}</td><td class="saat">${r.cikis}</td><td>${r.sure}</td><td class="${cls}">${r.durum}</td></tr>`;
+  });
+  html+=`</tbody></table><p style="margin-top:12px;color:#94a3b8;font-size:10px;">Toplam ${rows.length} kayit</p></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`giris-cikis-${y}-${String(m+1).padStart(2,'0')}.html`;a.click();
+  URL.revokeObjectURL(url);
+  toast('Detay raporu indirildi!');
+}
+
 function dlReport(){
   const y=puantajM.getFullYear(),m=puantajM.getMonth(),mn=fmtM(puantajM),dim=new Date(y,m+1,0).getDate();
   const dh=Array.from({length:dim},(_,i)=>i+1);
@@ -1616,12 +1705,10 @@ function installApp(){
 window.addEventListener('online',()=>updateFbStatus(true));
 window.addEventListener('offline',()=>updateFbStatus(false));
 
-// PWA Service Worker
+// PWA - Service Worker cache temizle
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js')
-      .then(reg=>console.log('SW registered'))
-      .catch(err=>console.log('SW error:', err));
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
   });
 }
 
