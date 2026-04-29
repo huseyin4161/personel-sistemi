@@ -755,8 +755,7 @@ window._applyFirebaseData=function(data){
     if(ap.id==='apage-dashboard')renderDash();
     if(ap.id==='apage-personel')renderTbl();
     if(ap.id==='apage-devam')renderTodayRecs();
-    if(ap.id==='apage-puantaj')renderPuantaj();
-    if(ap.id==='apage-puantaj'){updateDetayPersonelSel();renderDetayRapor();}
+    if(ap.id==='apage-puantaj'){renderPuantaj();updateDetayPersonelSel();renderDetayRapor();}
     if(ap.id==='apage-izinler'){renderBekleyenTalepler();renderIzinSummary();renderIzinListesi();}
   }
 };
