@@ -454,16 +454,7 @@ select.inp{appearance:none;cursor:pointer;}
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="pCards"></div>
 
-        <!-- Detaylı Giriş/Çıkış Raporu -->
-        <div class="card" style="margin-top:14px">
-          <div class="card-header">
-            <div><div class="card-title">🕐 Detaylı Giriş/Çıkış Raporu</div></div>
-            <select class="inp" id="detayPersonelSel" onchange="renderDetayRapor()" style="font-size:12px;padding:6px 10px;height:auto;">
-              <option value="">Tüm Personel</option>
-            </select>
-          </div>
-          <div id="detayRaporWrap"></div>
-        </div>
+
       </div>
 
       <!-- İZİNLER -->
@@ -755,7 +746,7 @@ window._applyFirebaseData=function(data){
     if(ap.id==='apage-dashboard')renderDash();
     if(ap.id==='apage-personel')renderTbl();
     if(ap.id==='apage-devam')renderTodayRecs();
-    if(ap.id==='apage-puantaj'){renderPuantaj();updateDetayPersonelSel();renderDetayRapor();}
+    if(ap.id==='apage-puantaj')renderPuantaj();
     if(ap.id==='apage-izinler'){renderBekleyenTalepler();renderIzinSummary();renderIzinListesi();}
   }
 };
@@ -771,7 +762,6 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function parseLD(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
 function WS(){return S.settings.wsStart||'08:00';}
-function WE(){return S.settings.wsEnd||'17:00';}
 function updateFbStatus(ok){const el=document.getElementById('fbStatus');const txt=document.getElementById('fbTxt');if(!el)return;el.className='fb-status '+(ok?'ok':'warn');txt.textContent=ok?'☁️ Bulut aktif':'⚠️ Çevrimdışı';}
 
 // ============ CLOCK ============
@@ -838,7 +828,7 @@ function showAPage(id,el){
   if(id==='dashboard')renderDash();
   if(id==='personel')renderTbl();
   if(id==='devam'){updateSels();renderCal();renderTodayRecs();}
-  if(id==='puantaj'){renderPuantaj();updateDetayPersonelSel();renderDetayRapor();}
+  if(id==='puantaj')renderPuantaj();
   if(id==='izinler'){updateIzinSels();renderBekleyenTalepler();renderIzinSummary();renderIzinListesi();}
   if(id==='ayarlar'){
     document.getElementById('wsStart').value=S.settings.wsStart||'08:00';
