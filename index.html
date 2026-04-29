@@ -1765,11 +1765,14 @@ function installApp(){
 window.addEventListener('online',()=>updateFbStatus(true));
 window.addEventListener('offline',()=>updateFbStatus(false));
 
-// PWA Service Worker
+// PWA Service Worker - cache temizle
 if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  });
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js')
-      .then(reg=>console.log('SW registered'))
+      .then(reg=>{reg.update();console.log('SW registered');})
       .catch(err=>console.log('SW error:', err));
   });
 }
