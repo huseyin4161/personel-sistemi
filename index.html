@@ -838,7 +838,7 @@ function showAPage(id,el){
   if(id==='dashboard')renderDash();
   if(id==='personel')renderTbl();
   if(id==='devam'){updateSels();renderCal();renderTodayRecs();}
-  if(id==='puantaj')renderPuantaj();
+  if(id==='puantaj'){renderPuantaj();updateDetayPersonelSel();renderDetayRapor();}
   if(id==='izinler'){updateIzinSels();renderBekleyenTalepler();renderIzinSummary();renderIzinListesi();}
   if(id==='ayarlar'){
     document.getElementById('wsStart').value=S.settings.wsStart||'08:00';
