@@ -307,6 +307,13 @@ select.inp{appearance:none;cursor:pointer;}
     <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:8px 16px;font-size:12px;color:#9a3412;font-weight:600;">🏖️ İzin</div>
   </div>
   <div style="font-size:13px;color:#94a3b8;">www.dijiaksu.com</div>
+  <button onclick="splashKapat()" style="
+    background:linear-gradient(135deg,#1e3a8a,#3b82f6);
+    color:white;border:none;border-radius:14px;
+    padding:16px 48px;font-size:17px;font-weight:700;
+    cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,.4);
+    margin-top:8px;letter-spacing:.5px;
+  ">Başla →</button>
 </div>
 
 <!-- MOBİL ALT NAV -->
@@ -770,11 +777,15 @@ window._applyFirebaseData=function(data){
   localStorage.setItem('hrv4',JSON.stringify(S));
   renderLastEntries();
   document.getElementById('navCnt').textContent=S.personel?S.personel.length:0;
-  // Splash screen gizle
-  setTimeout(()=>{
+  // Splash screen - manuel kapatma
+  window.splashKapat = function(){
     const splash=document.getElementById('splashScreen');
-    if(splash){splash.style.opacity='0';setTimeout(()=>splash.style.display='none',600);}
-  }, 4000);
+    if(splash){
+      splash.style.transition='opacity .5s ease';
+      splash.style.opacity='0';
+      setTimeout(()=>splash.style.display='none',500);
+    }
+  };
   const ap=document.querySelector('.apage.active');
   if(ap){
     if(ap.id==='apage-dashboard')renderDash();
